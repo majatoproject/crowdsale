@@ -294,15 +294,15 @@ contract CrowdsaleExt is Haltable {
         // Determine if it's a good time to accept investment from this participant
         if(getState() == State.PreFunding) {
             // Are we whitelisted for early deposit
+            throw;
+        } else if(getState() == State.Funding) {
+            // Retail participants can only come in when the crowdsale is running
+            // pass
             if(isWhiteListed) {
                 if(!earlyParticipantWhitelist[receiver].status) {
                     throw;
                 }
             }
-        } else if(getState() == State.Funding) {
-            // Retail participants can only come in when the crowdsale is running
-            // pass
-
         } else {
             // Unwanted state
             throw;
@@ -333,8 +333,7 @@ contract CrowdsaleExt is Haltable {
                 throw;
             }
         } else {
-//            if(tokenAmount < token.minCap() && tokenAmountOf[receiver] == 0) {
-            if(tokenAmount < token.minCap()) {
+            if(tokenAmount < token.minCap() && tokenAmountOf[receiver] == 0) {
                 throw;
             }
         }
