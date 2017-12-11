@@ -5,10 +5,11 @@
  */
 
 pragma solidity ^0.4.11;
-
-import "zeppelin/contracts/math/SafeMath.sol";
-import "./Crowdsale.sol";
+import "./MintedTokenCappedCrowdsaleExt.sol";
 import "./Haltable.sol";
+import "./SMathLib.sol";
+
+
 
 /**
  * Collect funds from presale investors, buy tokens for them in a single transaction and distribute out tokens.
@@ -24,7 +25,7 @@ import "./Haltable.sol";
  *
  */
 contract PreICOProxyBuyer is Ownable, Haltable {
-    using SafeMath for uint;
+    using SMathLib for uint;
 
     /** How many investors we have now */
     uint public investorCount;
@@ -68,7 +69,7 @@ contract PreICOProxyBuyer is Ownable, Haltable {
     bool public forcedRefund;
 
     /** Our ICO contract where we will move the funds */
-    Crowdsale public crowdsale;
+    CrowdsaleExt public crowdsale;
 
     /** What is our current state. */
     enum State{Unknown, Funding, Distributing, Refunding}
@@ -115,7 +116,7 @@ contract PreICOProxyBuyer is Ownable, Haltable {
     /**
      * Get the token we are distributing.
      */
-    function getToken() public constant returns(FractionalERC20) {
+    function getToken() public constant returns(FractionalERC20Ext) {
         if(address(crowdsale) == 0)  {
             throw;
         }
@@ -137,7 +138,7 @@ contract PreICOProxyBuyer is Ownable, Haltable {
 
         bool existing = balances[investor] > 0;
 
-        balances[investor] = balances[investor].add(msg.value);
+        balances[investor] = balances[investor].plus(msg.value);
 
         // Need to satisfy minimum and maximum limits
         if(balances[investor] < weiMinimumLimit || balances[investor] > weiMaximumLimit) {
@@ -150,7 +151,7 @@ contract PreICOProxyBuyer is Ownable, Haltable {
             investorCount++;
         }
 
-        weiRaised = weiRaised.add(msg.value);
+        weiRaised = weiRaised.plus(msg.value);
         if(weiRaised > weiCap) {
             throw;
         }
@@ -207,14 +208,14 @@ contract PreICOProxyBuyer is Ownable, Haltable {
         if(getState() != State.Distributing) {
             throw;
         }
-        return balances[investor].mul(tokensBought) / weiRaised;
+        return balances[investor].times(tokensBought) / weiRaised;
     }
 
     /**
      * How many tokens remain unclaimed for an investor.
      */
     function getClaimLeft(address investor) public constant returns (uint) {
-        return getClaimAmount(investor).sub(claimed[investor]);
+        return getClaimAmount(investor).minus(claimed[investor]);
     }
 
     /**
@@ -247,8 +248,8 @@ contract PreICOProxyBuyer is Ownable, Haltable {
             claimCount++;
         }
 
-        claimed[investor] = claimed[investor].add(amount);
-        totalClaimed = totalClaimed.add(amount);
+        claimed[investor] = claimed[investor].plus(amount);
+        totalClaimed = totalClaimed.plus(amount);
         getToken().transfer(investor, amount);
 
         Distributed(investor, amount);
@@ -273,7 +274,7 @@ contract PreICOProxyBuyer is Ownable, Haltable {
     /**
      * Set the target crowdsale where we will move presale funds when the crowdsale opens.
      */
-    function setCrowdsale(Crowdsale _crowdsale) public onlyOwner {
+    function setCrowdsale(CrowdsaleExt _crowdsale) public onlyOwner {
         crowdsale = _crowdsale;
 
         // Check interface
@@ -302,7 +303,7 @@ contract PreICOProxyBuyer is Ownable, Haltable {
     /**
      * Resolve the contract umambigious state.
      */
-    function getState() public returns(State) {
+    function getState() public view returns(State) {
         if (forcedRefund)
             return State.Refunding;
 
