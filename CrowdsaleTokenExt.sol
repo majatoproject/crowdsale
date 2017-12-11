@@ -517,10 +517,6 @@ contract CrowdsaleTokenExt is ReleasableToken, MintableTokenExt, BurnableToken, 
     /* Minimum ammount of tokens every buyer can buy. */
     uint public minCap;
 
-    uint public ownersCommissionInPerc = 5;
-
-    uint public operatorCommissionInPerc = 25;
-
 
     /**
      * Construct the token.
@@ -570,7 +566,6 @@ contract CrowdsaleTokenExt is ReleasableToken, MintableTokenExt, BurnableToken, 
      * When token is released to be transferable, enforce no new tokens can be created.
      */
     function releaseTokenTransfer() public onlyReleaseAgent {
-        //mintingFinished = true; // commented to allow mint tokens after the end of the initial ico
         super.releaseTokenTransfer();
     }
 
@@ -597,15 +592,26 @@ contract CrowdsaleTokenExt is ReleasableToken, MintableTokenExt, BurnableToken, 
         UpdatedTokenInformation(name, symbol);
     }
 
+}
+
+
+contract MjtToken is CrowdsaleTokenExt {
+
+    uint public ownersProductCommissionInPerc = 5;
+
+    uint public operatorProductCommissionInPerc = 25;
+
+    event IndependentSellerJoined(address sellerWallet, uint amountOfTokens, address operatorWallet);
+
 
     function setOperatorCommission(uint _value) public onlyOwner {
         require(_value >= 0);
-        operatorCommissionInPerc = _value;
+        operatorProductCommissionInPerc = _value;
     }
 
     function setOwnersCommission(uint _value) public onlyOwner {
         require(_value >= 0);
-        ownersCommissionInPerc = _value;
+        ownersProductCommissionInPerc = _value;
     }
 
 
@@ -618,16 +624,17 @@ contract CrowdsaleTokenExt is ReleasableToken, MintableTokenExt, BurnableToken, 
         require(sellerWallet != address(0));
         require(operatorWallet != address(0));
 
-        uint operatorCommission = amountOfTokens.divides(100).times(operatorCommissionInPerc);
+        uint operatorCommission = amountOfTokens.divides(100).times(operatorProductCommissionInPerc);
         uint sellerAmount = amountOfTokens.minus(operatorCommission);
-
-        if (sellerAmount > 0) {
-            mint(sellerWallet, sellerAmount);
-        }
 
         if (operatorCommission > 0) {
             mint(operatorWallet, operatorCommission);
         }
+
+        if (sellerAmount > 0) {
+            mint(sellerWallet, sellerAmount);
+        }
+        IndependentSellerJoined(sellerWallet, amountOfTokens, operatorWallet);
     }
 
 
@@ -640,7 +647,7 @@ contract CrowdsaleTokenExt is ReleasableToken, MintableTokenExt, BurnableToken, 
         require(ownersWallet != address(0));
         require(operatorWallet != address(0));
 
-        uint ownersComission = amountOfTokens.divides(100).times(ownersCommissionInPerc);
+        uint ownersComission = amountOfTokens.divides(100).times(ownersProductCommissionInPerc);
         uint operatorAmount = amountOfTokens.minus(ownersComission);
 
 
@@ -653,6 +660,5 @@ contract CrowdsaleTokenExt is ReleasableToken, MintableTokenExt, BurnableToken, 
         }
 
     }
-
 
 }
