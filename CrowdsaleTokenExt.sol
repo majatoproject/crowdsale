@@ -602,16 +602,21 @@ contract MjtToken is CrowdsaleTokenExt {
     uint public operatorProductCommissionInPerc = 25;
 
     event IndependentSellerJoined(address sellerWallet, uint amountOfTokens, address operatorWallet);
+    event OwnersProductAdded(address ownersWallet, uint amountOfTokens, address operatorWallet);
+    event OperatorProductCommissionChanged(uint _value);
+    event OwnersProductCommissionChanged(uint _value);
 
 
     function setOperatorCommission(uint _value) public onlyOwner {
         require(_value >= 0);
         operatorProductCommissionInPerc = _value;
+        OperatorProductCommissionChanged(_value);
     }
 
     function setOwnersCommission(uint _value) public onlyOwner {
         require(_value >= 0);
         ownersProductCommissionInPerc = _value;
+        OwnersProductCommissionChanged(_value);
     }
 
 
@@ -659,6 +664,10 @@ contract MjtToken is CrowdsaleTokenExt {
             mint(operatorWallet, operatorAmount);
         }
 
+        OwnersProductAdded(ownersWallet, amountOfTokens, operatorWallet);
     }
+
+    function MjtToken(string _name, string _symbol, uint _initialSupply, uint _decimals, bool _mintable, uint _globalMinCap)
+    CrowdsaleTokenExt(_name, _symbol, _initialSupply, _decimals, _mintable, _globalMinCap) {}
 
 }
