@@ -228,11 +228,9 @@ contract CrowdsaleExt is Haltable {
         isWhiteListed = _isWhiteListed;
     }
 
-    /**
-     * Don't expect to just send in money and get tokens.
-     */
+
     function() payable {
-        throw;
+        invest(msg.sender);
     }
 
     /**
